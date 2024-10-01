@@ -6,8 +6,9 @@ import re
 import csv
 import argparse
 import http.client
-import urllib.parse
+from urllib.parse import urlparse, urlunparse
 import ssl
+import re
 
 class Config(TypedDict):
     username: str
@@ -152,14 +153,58 @@ class Campus(Base):
 
         conn.close()
 
-    def generate_headers() -> dict:
+    def check_logout_event(self):
+        # Tries connecting to gstatic connect
+        try:
+            # Parse the URL
+            url = urlparse('http://www.gstatic.com/')  # Example for a captive portal test
+
+            # Create an HTTP connection
+            conn = http.client.HTTPConnection(url.netloc, timeout=4)
+            
+            # Ensure there's a valid path (use "/" if the path is empty)
+            path = url.path if url.path else "/"
+            
+            # Send a GET request
+            conn.request("GET", path)
+            
+            # Get the response
+            response = conn.getresponse()
+            #print(response.status)
+
+            data = response.read().decode('utf-8')
+            #print(data)
+            
+            if response.status == 200:
+                # Use regex to extract the URL within the window.location script
+                match = re.search(r'window\.location="([^"]+)"', data)
+                full_portal_url = match.group(1) if match else ""
+                
+                if full_portal_url:
+                    # Parse the full URL to extract the base URL
+                    parsed_url = urlparse(full_portal_url)
+                    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}" + "/login?"  # Extract scheme and netloc
+                    print(f'Session expired! Logging in to {base_url}')
+                    return True
+                else:
+                    print("Can\'t find captive portal url, trying to login anyway...")
+                    return True
+            elif response.status == 404:
+                print('WAN is up, not logged out!')
+                return False
+            else:
+                print('WAN is down!')
+                return False
+            
+        except Exception as e:
+            print(f'Exception occurred: {str(e)}')
+            return False
+    
+    def generate_headers(self) -> dict:
         pass
 
 def parse_args() -> dict:
     ap = argparse.ArgumentParser(description="A command line utility to login and logout from VITAP's hostel and campus wifi")
-    ap.add_argument("-c", help="stop after <c> attempts to fetch wifi SSID (default is 4 attempts)")
-    ap.add_argument("-i", help="change interval seconds between attempts (default is 5 seconds)")
-    ap.add_argument("-p", action="store_true", help="enable polling to fetch wifi SSID")
 
     group = ap.add_mutually_exclusive_group(required=False)
     group.add_argument("--login", action="store_true", help="attempt login")
@@ -167,7 +212,7 @@ def parse_args() -> dict:
     
     return vars(ap.parse_args())
 
-def main() -> None:
+if __name__ == "__main__":
     
     args = parse_args()
     campus = Campus()
@@ -180,13 +225,10 @@ def main() -> None:
         print("Campus Automated Wifi Login")
         print("1. Login")
         print("2. Logout")
-        choice = int(input("Enter your choice: "))
+        choice = int(input("Enter your choice (1/2): "))
         if choice == 1:
             campus.login()
         elif choice == 2:
             campus.logout()
         else:
             print("arigato <3")
-
-if __name__ == "__main__":
-    main()

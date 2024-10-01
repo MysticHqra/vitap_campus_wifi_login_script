@@ -155,9 +155,6 @@ class Campus(Base):
 
 def parse_args() -> dict:
     ap = argparse.ArgumentParser(description="A command line utility to login and logout from VITAP's hostel and campus wifi")
-    ap.add_argument("-c", help="stop after <c> attempts to fetch wifi SSID (default is 4 attempts)")
-    ap.add_argument("-i", help="change interval seconds between attempts (default is 5 seconds)")
-    ap.add_argument("-p", action="store_true", help="enable polling to fetch wifi SSID")
 
     group = ap.add_mutually_exclusive_group(required=False)
     group.add_argument("--login", action="store_true", help="attempt login")
@@ -178,7 +175,7 @@ def main() -> None:
         print("Campus Automated Wifi Login")
         print("1. Login")
         print("2. Logout")
-        choice = int(input("Enter your choice: "))
+        choice = int(input("Enter your choice (1/2): "))
         if choice == 1:
             campus.login()
         elif choice == 2:
