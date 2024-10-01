@@ -1,13 +1,16 @@
 import json
+import os
 from typing import TypedDict
 from abc import ABC, abstractmethod
 import re
 import csv
 import argparse
 import http.client
-import urllib.parse
+import urllib
 import ssl
-import os
+from urllib.parse import urlparse, urlunparse
+import re
+import time
 
 class Config(TypedDict):
     username: str
@@ -150,7 +153,54 @@ class Campus(Base):
 
         conn.close()
 
-    def generate_headers() -> dict:
+    def check_logout_event(self):
+        # Tries connecting to gstatic connect
+        try:
+            # Parse the URL
+            url = urlparse('http://www.gstatic.com/')  # Example for a captive portal test
+
+            # Create an HTTP connection
+            conn = http.client.HTTPConnection(url.netloc, timeout=4)
+            
+            # Ensure there's a valid path (use "/" if the path is empty)
+            path = url.path if url.path else "/"
+            
+            # Send a GET request
+            conn.request("GET", path)
+            
+            # Get the response
+            response = conn.getresponse()
+            #print(response.status)
+
+            data = response.read().decode('utf-8')
+            #print(data)
+            
+            if response.status == 200:
+                # Use regex to extract the URL within the window.location script
+                match = re.search(r'window\.location="([^"]+)"', data)
+                full_portal_url = match.group(1) if match else ""
+                
+                if full_portal_url:
+                    # Parse the full URL to extract the base URL
+                    parsed_url = urlparse(full_portal_url)
+                    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}" + "/login?"  # Extract scheme and netloc
+                    print(f'Session expired! Logging in to {base_url}')
+                    return True
+                else:
+                    print("Session expired, unable to find captive portal url. Trying to login anyway...")
+                    return True
+            elif response.status == 404:
+                #print('WAN is up, not logged out!')
+                return False
+            else:
+                #print('WAN is down!')
+                return False
+            
+        except Exception as e:
+            print(f'Exception occurred: {str(e)}')
+            return False
+
+    def generate_headers(self) -> dict:
         pass
 
 def parse_args() -> dict:
@@ -162,8 +212,8 @@ def parse_args() -> dict:
     
     return vars(ap.parse_args())
 
-def main() -> None:
-    
+if __name__ == "__main__":
+
     args = parse_args()
     campus = Campus()
 
@@ -178,10 +228,12 @@ def main() -> None:
         choice = int(input("Enter your choice (1/2): "))
         if choice == 1:
             campus.login()
+            print("Running in background for auto relogin in case of sesion expiry...")
+            while True:
+                if campus.check_logout_event() == True:
+                    campus.login()
+                time.sleep(60)
         elif choice == 2:
             campus.logout()
         else:
             print("arigato <3")
-
-if __name__ == "__main__":
-    main()

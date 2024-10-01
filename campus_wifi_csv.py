@@ -6,9 +6,11 @@ import re
 import csv
 import argparse
 import http.client
-from urllib.parse import urlparse, urlunparse
+import urllib
 import ssl
+from urllib.parse import urlparse, urlunparse
 import re
+import time
 
 class Config(TypedDict):
     username: str
@@ -187,13 +189,13 @@ class Campus(Base):
                     print(f'Session expired! Logging in to {base_url}')
                     return True
                 else:
-                    print("Can\'t find captive portal url, trying to login anyway...")
+                    print("Session expired, unable to find captive portal url. Trying to login anyway...")
                     return True
             elif response.status == 404:
-                print('WAN is up, not logged out!')
+                #print('WAN is up, not logged out!')
                 return False
             else:
-                print('WAN is down!')
+                #print('WAN is down!')
                 return False
             
         except Exception as e:
@@ -213,7 +215,7 @@ def parse_args() -> dict:
     return vars(ap.parse_args())
 
 if __name__ == "__main__":
-    
+
     args = parse_args()
     campus = Campus()
 
@@ -228,6 +230,11 @@ if __name__ == "__main__":
         choice = int(input("Enter your choice (1/2): "))
         if choice == 1:
             campus.login()
+            print("Running in background for auto relogin in case of sesion expiry...")
+            while True:
+                if campus.check_logout_event() == True:
+                    campus.login()
+                time.sleep(60)
         elif choice == 2:
             campus.logout()
         else:
