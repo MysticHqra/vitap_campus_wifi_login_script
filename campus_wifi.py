@@ -209,6 +209,7 @@ def parse_args() -> dict:
     group = ap.add_mutually_exclusive_group(required=False)
     group.add_argument("--login", action="store_true", help="attempt login")
     group.add_argument("--logout", action="store_true", help="attempt logout")
+    group.add_argument("--auto", action="store_true", help="auto re-login on session expiry")
     
     return vars(ap.parse_args())
 
@@ -221,19 +222,27 @@ if __name__ == "__main__":
         campus.login()
     elif args['logout']:
         campus.logout()
+    elif args['auto']:
+        print("Running as a loop to auto re-login on session expiry...")
+        while True:
+            if campus.check_logout_event() == True:
+                campus.login()
+            time.sleep(60)
     else:
         print("Campus Automated Wifi Login")
         print("1. Login")
         print("2. Logout")
+        print("3. Auto (Headless Mode)")
         choice = int(input("Enter your choice (1/2): "))
         if choice == 1:
             campus.login()
-            print("Running in background for auto relogin in case of sesion expiry...")
+        elif choice == 2:
+            campus.logout()
+        elif choice == 3:
+            print("Running a loop to auto re-login on session expiry...")
             while True:
                 if campus.check_logout_event() == True:
                     campus.login()
                 time.sleep(60)
-        elif choice == 2:
-            campus.logout()
         else:
-            print("arigato <3")
+            print("arigato <3 hara")
