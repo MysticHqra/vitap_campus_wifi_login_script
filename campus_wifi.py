@@ -22,9 +22,6 @@ class Base(ABC):
     def __init__(self) -> None:
         self.config_file_path = "./config.json"
         self.config: Config = self.load_or_create_config()
-        if self.config["username"] or self.config["password"] == "":
-            print(f"Please update {self.config_file_path} with your username and password.")
-            exit(1)  # Exit after creating the config file
     
     @abstractmethod
     def login(self) -> None:
@@ -49,11 +46,14 @@ class Base(ABC):
                 "hostel_endpoint": "https://hfw.vitap.ac.in:8090/login.xml",
                 "campus_endpoint": "https://172.18.10.10:1000"
             }
-            # Write default config to file
+            default_config["username"] = input("Enter your registration number: ")
+            default_config["password"] = input("Enter your wifi password: ")
+
+            # Write config to file
             with open(self.config_file_path, "w") as config_file:
                 json.dump(default_config, config_file, indent=4)
-            print(f"Please update {self.config_file_path} with your username and password.")
-            exit(1)  # Exit after creating the config file
+            with open(self.config_file_path, "r") as config_file:
+                return json.load(config_file)
         else:
             # Load the existing config
             with open(self.config_file_path, "r") as config_file:
@@ -127,7 +127,8 @@ class Campus(Base):
             print(f"Concurrent Login while using {cred}")
             
         else:
-            print(f"Invalid login while using {cred}")
+            print(f"Invalid login while using {cred}. Deleting config.json...")
+            os.remove(self.config_file_path)
 
 
     def logout(self) -> None:

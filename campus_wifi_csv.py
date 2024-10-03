@@ -49,12 +49,15 @@ class Base(ABC):
             # Write default config to file
             with open(self.config_file_path, "w") as config_file:
                 json.dump(default_config, config_file, indent=4)
+            with open(self.config_file_path, "r") as config_file:
+                return json.load(config_file)
         else:
             # Load the existing config
             with open(self.config_file_path, "r") as config_file:
                 return json.load(config_file)
 
 class Campus(Base):
+
     def fetch_magic(self) -> str:
         url = self.config["campus_endpoint"]
         
