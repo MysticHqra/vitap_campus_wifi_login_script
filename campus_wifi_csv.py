@@ -57,7 +57,6 @@ class Base(ABC):
                 return json.load(config_file)
 
 class Campus(Base):
-
     def fetch_magic(self) -> str:
         url = self.config["campus_endpoint"]
         
@@ -209,7 +208,7 @@ class Campus(Base):
         pass
 
 def parse_args() -> dict:
-    ap = argparse.ArgumentParser(description="A command line utility to login and logout from VITAP's hostel and campus wifi")
+    ap = argparse.ArgumentParser(description="A command line utility to login and logout from VITAP's Campus Wifi")
 
     group = ap.add_mutually_exclusive_group(required=False)
     group.add_argument("--login", action="store_true", help="attempt login")

@@ -20,15 +20,16 @@ A python script to automate the wifi login for VIT-AP's campus's wifi. (works in
 
 ## Usage
 ```
-campus_wifi.py [-h] (--login | --logout)
-campus_wifi_csv.py [-h] (--login | --logout)
+campus_wifi.py [-h | --help]
+campus_wifi_csv.py [-h | --help]
 
-A command line utility to login and logout from VITAP's campus wifi
+A command line utility to login and logout from VITAP's Campus Wifi
 
 options:
   -h, --help  show this help message and exit
   --login     attempt login
   --logout    attempt logout
+  --auto      auto re-login on session expiry
 ```
 
 ## Examples
