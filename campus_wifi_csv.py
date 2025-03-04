@@ -84,17 +84,21 @@ class Campus(Base):
         else:
             raise ValueError("Magic token not found in the HTML response.")
 
-    def login(self) -> None:
+    def login(self, username=None, password=None) -> None:
         magic = self.fetch_magic()
         url = self.config["campus_endpoint"]
-        
+
         # Extract hostname and path
         hostname = url.replace("https://", "").replace("http://", "")
         path = "/login?"
 
-        # Open the CSV file and read the credentials
-        with open('wifi.csv', mode='r') as file:
-            creds = list(csv.reader(file))
+        # If username and password are provided manually, use them
+        if username and password:
+            creds = [(username, password)]
+        else:
+            # Otherwise, read from the CSV file
+            with open('wifi.csv', mode='r') as file:
+                creds = list(csv.reader(file))
 
         for cred in creds:
             # Prepare POST data
@@ -122,13 +126,70 @@ class Campus(Base):
 
             # Check the response for success or failure
             if "https://172.18.10.10:1000/keepalive?" in response_content:
-                print(f"Login Successful using {cred}")
+                print(f"Login Successful using {cred[0]}")
                 break
             elif "Sorry, user&apos;s concurrent authentication is over limit" in response_content:
-                print(f"Concurrent Login while using {cred}")
+                print(f"Concurrent Login while using {cred[0]}")
                 continue
             else:
-                print(f"Invalid login while using {cred}")
+                print(f"Invalid login while using {cred[0]}")
+                continue
+        else:
+            print("-End of iteration-")
+
+    def remove(self) -> None:
+        url = self.config["campus_endpoint"]
+        
+        # Extract hostname and path
+        hostname = url.replace("https://", "").replace("http://", "")
+        path = "/login?"
+
+        # Open the CSV file and read the credentials
+        with open('wifi.csv', mode='r') as file:
+            creds = list(csv.reader(file))
+        
+        creds_copy = creds.copy()
+
+        for cred in creds:
+            magic = self.fetch_magic()
+            # Prepare POST data
+            post_data = urllib.parse.urlencode({
+                "4Tredir": "https://172.18.10.10:1000/login?",
+                "magic": magic,
+                "username": cred[0],
+                "password": cred[1]
+            })
+
+            headers = {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+
+            # Establish a connection with SSL verification disabled
+            conn = http.client.HTTPSConnection(hostname, context=ssl._create_unverified_context())
+
+            # Make a POST request to the login URL
+            conn.request("POST", path, body=post_data, headers=headers)
+
+            # Get the response
+            response = conn.getresponse()
+            response_content = response.read().decode('utf-8')
+            conn.close()
+
+            # Check the response for success or failure
+            if "https://172.18.10.10:1000/keepalive?" in response_content:
+                print(f"Login Successful using {cred}")
+                self.logout()
+                continue
+                #break
+            elif "Sorry, user&apos;s concurrent authentication is over limit" in response_content:
+                print(f"Concurrent User Login while using {cred}. Skipping!")
+                continue
+            else:
+                print(f"Invalid login while using {cred}. Deleting entry from the list...")
+                creds_copy.remove(cred)
+                with open('wifi.csv', mode='w') as tmp:
+                    csvWriter = csv.writer(tmp)
+                    csvWriter.writerows(creds_copy)
                 continue
         else:
             print("Reached end of the csv file")
@@ -214,7 +275,9 @@ def parse_args() -> dict:
     group.add_argument("--login", action="store_true", help="attempt login")
     group.add_argument("--logout", action="store_true", help="attempt logout")
     group.add_argument("--auto", action="store_true", help="auto re-login on session expiry")
-    
+    group.add_argument("--remove", action="store_true", help="remove invalid entries from csv")
+    group.add_argument("--manual", nargs=2, metavar=("USERNAME", "PASSWORD"), help="login using provided credentials")
+
     return vars(ap.parse_args())
 
 if __name__ == "__main__":
@@ -229,15 +292,23 @@ if __name__ == "__main__":
     elif args['auto']:
         print("Running as a loop to auto re-login on session expiry...")
         while True:
-            if campus.check_logout_event() == True:
+            if campus.check_logout_event():
                 campus.login()
             time.sleep(60)
+    elif args['remove']:
+        print("Removing invalid creds from the csv file...")
+        campus.remove()
+    elif args['manual']:
+        username, password = args['manual']
+        campus.login(username, password)
     else:
         print("Campus Automated Wifi Login")
         print("1. Login")
         print("2. Logout")
-        print("3. Auto (Headless Mode)")
-        choice = int(input("Enter your choice (1/2): "))
+        print("3. Auto login (Runs in Background)")
+        print("4. Remove invalid entries from the csv")
+        print("5. Manual Login")
+        choice = int(input("Enter your choice (1/2/3/4/5): "))
         if choice == 1:
             campus.login()
         elif choice == 2:
@@ -245,8 +316,15 @@ if __name__ == "__main__":
         elif choice == 3:
             print("Running a loop to auto re-login on session expiry...")
             while True:
-                if campus.check_logout_event() == True:
+                if campus.check_logout_event():
                     campus.login()
                 time.sleep(60)
+        elif choice == 4:
+            print("Removing invalid creds from the csv file...")
+            campus.remove()
+        elif choice == 5:
+            username = input("Enter username: ")
+            password = input("Enter password: ")
+            campus.login(username, password)
         else:
             print("arigato <3 hara")

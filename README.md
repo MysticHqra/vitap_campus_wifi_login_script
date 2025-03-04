@@ -6,7 +6,9 @@ A python script to automate the wifi login for VIT-AP's campus's wifi. (works in
 ## Features
 1. Login and Logout from the wifi seamlessly without having to go through the captive portal.
 2. Automate the same for a list of credentials by using a csv file. **(wifi.csv)**
-3. Headless Mode -> Enables auto re-login by detecting session expiry. **(Requires you to run the script in the background)**
+3. Background Mode -> Enables auto re-login by detecting session expiry. **(Requires you to run the script in the background)**
+4. Remove invalid -> Deletes invalid login credentials from the csv file.
+5. Manual -> Takes username and password as inputs for logging in directly without using the csv file.
 
 ## Requirements
 - python 3.x (duh)
@@ -30,6 +32,8 @@ options:
   --login     attempt login
   --logout    attempt logout
   --auto      auto re-login on session expiry
+  --remove    remove invalid entries from csv
+  --manual    login using provided credentials
 ```
 
 ## Examples
