@@ -318,11 +318,11 @@ class Hostel(Base):
         """Generate payload for hostel WiFi requests"""
         epoch_time = int(time.time() * 1000)
         mode = None
-        creds_field = f'username={username or self.config["username"]}'
+        creds_field = f'username={username or self.config["username"] or None}'
 
         if action == 'login':
             mode = '191'
-            creds_field += f'&password={password or self.config["password"]}'
+            creds_field += f'&password={password or self.config["password"] or None}'
         elif action == 'logout':
             mode = '193'
         elif action == 'ack':
@@ -615,10 +615,8 @@ if __name__ == "__main__":
 
             if choice == 1:
                 wifi_client.login(use_csv=use_csv)  # Default: use config.json
-                break
             elif choice == 2:
                 wifi_client.logout()
-                break
             elif choice == 3:
                 if hasattr(wifi_client, 'auto_login'):
                     wifi_client.auto_login(use_csv=use_csv)  # Default: use config.json
@@ -628,19 +626,16 @@ if __name__ == "__main__":
                         if wifi_client.check_logout_event():
                             wifi_client.login(use_csv=use_csv)  # Default: use config.json
                         time.sleep(60)
-                break
             elif choice == 4:
                 if wifi_type == "Campus":
                     print("Removing invalid creds from the csv file...")
                     wifi_client.remove()
                 else:
                     print("Remove function is only available for Campus WiFi")
-                break
             elif choice == 5:
                 username = input("Enter username: ")
                 password = input("Enter password: ")
                 wifi_client.login(username, password, use_csv=False)  # Manual override
-                break
             elif choice == 6:
                 if not use_csv:
                     print("Using CSV file for login...")

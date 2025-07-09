@@ -1,10 +1,10 @@
 # VIT-AP Campus & Hostel Wifi Automation
 ## (~~Automate the Boring Stuff with Python~~)
 
-A python script to automate the wifi login for VIT-AP's campus and hostel wifi. (Fortigate & Sofos)
+A python script to automate the wifi login for VIT-AP's campus and hostel wifi. (Fortigate & Sophos)
 
 ## Features
-1. Supports both Fortigate & Sofos Captive Login Portals.
+1. Supports both Fortigate & Sophos Captive Login Portals.
 2. Login and Logout from the wifi seamlessly without having to go through the captive portal.
 3. Automate the same for a list of credentials by using a csv file. **(wifi.csv)**
 4. Background Mode -> Enables auto re-login by detecting session expiry. **(Requires you to run the script in the background)**
